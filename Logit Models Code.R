@@ -10,8 +10,8 @@ library(kableExtra)
 invlogit <- function(x){1/(1 + exp(-x))}
 
 #Main Files ####
-AP_Youth_Survey <- read_excel("youth_survey_responses (7th Mar).xlsx")
-AP_Household_Roster <- read_excel("Household Roster Youth Survey (7th Mar).xlsx")
+AP_Youth_Survey <- read_excel("youth_survey_responses (12th Mar).xlsx")
+AP_Household_Roster <- read_excel("Household Roster Youth Survey (12th Mar).xlsx")
 
 #Codebooks ####
 AP_Youth_Survey_Codebook <- read_excel("AP_Youth_Survey_Codebook.xlsx")
@@ -19,7 +19,7 @@ colnames(AP_Youth_Survey) <- AP_Youth_Survey_Codebook$Variable_Name
 attr(AP_Youth_Survey, "variable.labels") <- AP_Youth_Survey_Codebook$Column_Name
 
 AP_Household_Roster_Codebook <- read_excel("AP_Youth_Survey_Codebook.xlsx", sheet = 2)
-colnames(AP_Household_Roster) <- AP_Household_Roster_Codebook$Variable_Name
+colnames(AP_Household_Roster) <- c(AP_Household_Roster_Codebook$Variable_Name, "NAN")
 attr(AP_Household_Roster, "variable.labels") <- AP_Household_Roster_Codebook$Column_Name
 
 
@@ -120,20 +120,21 @@ prim_act <- AP_Youth_Survey_Merged$Y_F_81
 
 city_size <- AP_Youth_Survey_Merged$City_Size_Class
 
+ever_married <- ifelse((AP_Youth_Survey_Merged$H_4 %in% c("Never Married", "Don't know")) == F, 1, 0)
 
 #Running the model and getting a probability estimate
-logit.fit <- glm(y ~ age + female + factor(prim_act) + factor(city_size) + rel_others + rel_muslim + rel_christ + caste_others + caste_sc + caste_st + caste_bc, family=binomial(link = "logit")) 
+logit.fit <- glm(y ~ age + female + factor(prim_act) + factor(city_size) + rel_others + rel_muslim + rel_christ + caste_others + caste_sc + caste_st + caste_bc + ever_married, family=binomial(link = "logit")) 
 summary(logit.fit)
 
 logit.fit$coefficients
 
-x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0)  ## OC, Hindu, Employed, Big City, Male
+x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0,0)  ## OC, Hindu, Employed, Big City, Male
 
 invlogit(logit.fit$coefficients %*% x)
 
 
 #Simulations to generate predicted values
-x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0)
+x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0,0)
 
 set.seed(1234)
 sim.coef <- mvrnorm(15000, logit.fit$coefficients, vcov(logit.fit))
@@ -152,15 +153,15 @@ quantile(predval.sim, seq(0,1,0.01))
 
 sim.coef <- mvrnorm(15000, logit.fit$coefficients, vcov(logit.fit))
 
-bounds <- matrix(NA, nrow = 13, ncol = 2)
-mean_prob <- rep(NA, 13)
+bounds <- matrix(NA, nrow = 14, ncol = 2)
+mean_prob <- rep(NA, 14)
 
 var_names <- c('Baseline', 'Female', 'Student', 'Unemployed', 'Medium City', 'Small City', 
-               'Other Religions', 'Muslims', 'Christians', 'Other Castes', 'SC', 'ST', 'Backward Castes')
+               'Other Religions', 'Muslims', 'Christians', 'Other Castes', 'SC', 'ST', 'Backward Castes', 'Married')
 
-for (i in 1:13) {
+for (i in 1:14) {
   
-  x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0)
+  x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0,0)
 
   if(i > 1) {
     
@@ -186,12 +187,12 @@ Conf_Int_Probs1[,c(2:4)] <-  round(Conf_Int_Probs1[,c(2:4)], 2)
 #Model 2 - For interest in skilling####
 y <- ifelse(AP_Youth_Survey_Merged$YR_F_92 == "No", 0, 1)
 
-logit.fit <- glm(y ~ age + female + factor(prim_act) + factor(city_size) + rel_others + rel_muslim + rel_christ + caste_others + caste_sc + caste_st + caste_bc, family=binomial(link = "logit")) 
+logit.fit <- glm(y ~ age + female + factor(prim_act) + factor(city_size) + rel_others + rel_muslim + rel_christ + caste_others + caste_sc + caste_st + caste_bc + ever_married, family=binomial(link = "logit")) 
 summary(logit.fit)
 
 logit.fit$coefficients
 
-x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0)  ## OC, Hindu, Employed, Big City, Male
+x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0,0)  ## OC, Hindu, Employed, Big City, Male
 
 invlogit(logit.fit$coefficients %*% x)
 
@@ -199,16 +200,16 @@ invlogit(logit.fit$coefficients %*% x)
 set.seed(1234)
 sim.coef <- mvrnorm(15000, logit.fit$coefficients, vcov(logit.fit))
 
-bounds <- matrix(NA, nrow = 13, ncol = 2)
-mean_prob <- rep(NA, 13)
+bounds <- matrix(NA, nrow = 14, ncol = 2)
+mean_prob <- rep(NA, 14)
 
 
 var_names <- c('Baseline', 'Female', 'Student', 'Unemployed', 'Medium City', 'Small City', 
-               'Other Religions', 'Muslims', 'Christians', 'Other Castes', 'SC', 'ST', 'Backward Castes')
+               'Other Religions', 'Muslims', 'Christians', 'Other Castes', 'SC', 'ST', 'Backward Castes', 'Married')
 
-for (i in 1:13) {
+for (i in 1:14) {
   
-  x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0)
+  x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0,0)
   
   if(i > 1) {
     
@@ -331,4 +332,93 @@ bp <- barplot(100*multi_vec/sum(multi_vec), names.arg = c("IT and English", "IT 
 
 text(bp, 100*multi_vec/sum(multi_vec), round(100*multi_vec/sum(multi_vec)), pos = 3, col = "black")
 
+
+
+
+#Adding variables from Roster
+M <- as.data.table(AP_Household_Roster)
+M$UID = M$`_submission__uuid`
+M$Ma <- M$Gender == "Male" & M$H_1 == "Self"
+M$Fa <- M$Gender == "Female" & M$H_1 == "Self"
+M$UID = M$`_submission__uuid`
+
+Mal <- M$`_submission__uuid`[M$Ma == T]
+Fal <- M$`_submission__uuid`[M$Fa == T]
+
+Male <- M[UID %in% Mal,.(Father_Ed = H_5[H_1 == "Father"], Self_Ed = H_5[H_1 == "Self"],
+                         Father_Occup = Occup_Cat_Level[H_1 == "Father"], 
+                         Self_Occup = Occup_Cat_Level[H_1 == "Self"]), by=c("UID")]
+
+Female <- M[UID %in% Fal,.(Father_Ed = H_5[H_1 == "Father"], Self_Ed = H_5[H_1 == "Self"],
+                           Father_Occup = Occup_Cat_Level[H_1 == "Father"], 
+                           Self_Occup = Occup_Cat_Level[H_1 == "Self"]), by=c("UID")]
+
+Educ_Occup <- rbind(Male, Female)
+
+
+
+for (i in 1:nrow(AP_Youth_Survey_Merged)) {
+
+  
+  AP_Youth_Survey_Merged$Father_Educ[i] = ifelse((is.na(Educ_Occup$Father_Ed[Educ_Occup$UID == AP_Youth_Survey_Merged$`_uuid`[i]])) == F, 
+                                                 Educ_Occup$Father_Ed[Educ_Occup$UID == AP_Youth_Survey_Merged$`_uuid`[i]], NA) 
+  
+  
+  AP_Youth_Survey_Merged$Father_Occup[i] = ifelse((is.na(Educ_Occup$Father_Occup[Educ_Occup$UID == AP_Youth_Survey_Merged$`_uuid`[i]])) == F, 
+                                                  Educ_Occup$Father_Occup[Educ_Occup$UID == AP_Youth_Survey_Merged$`_uuid`[i]], NA) 
+  
+  AP_Youth_Survey_Merged$Self_Occup_Cat[i] = ifelse((is.na(Educ_Occup$Self_Occup[Educ_Occup$UID == AP_Youth_Survey_Merged$`_uuid`[i]])) == F, 
+                                                    Educ_Occup$Self_Occup[Educ_Occup$UID == AP_Youth_Survey_Merged$`_uuid`[i]], NA) 
+  
+  
+}
+
+
+
+#Models with non-demographic predictors ####
+motorable_road <- ifelse(AP_Youth_Survey_Merged$Y_5 %in% c("Kuccha motorable", "Pucca motorable"), 1, 0)
+closed_drainage <- ifelse(AP_Youth_Survey_Merged$Y_6 == "Pucca Closed", 1, 0)
+rented_house <- ifelse(AP_Youth_Survey_Merged$Y_D_31 == "Yes", 1, 0)
+
+labour_pref <- ifelse(AP_Youth_Survey_Merged$Y_F_170 %in% c("Happy with current work","Do not wish to work"),
+                      "Status Quo", ifelse(AP_Youth_Survey_Merged$Y_F_170 %in% c("Work for a private company", "Work for a multinational corporation", "Work for a non-profit organization"),
+                                           "Private Sector", ifelse(AP_Youth_Survey_Merged$Y_F_170 %in% c("Start your own business", "Work for family business"),
+                                                             "Self/Family Business", ifelse(AP_Youth_Survey_Merged$Y_F_170 == "Work for the government/public sector",
+                                                                                            "Public Sector", "No Response"))))
+
+#Status quo, government, private or business
+
+#Min. income threshold for job
+#Move out of AP
+y_movement <- ifelse(AP_Youth_Survey$Y_F_173 == "Yes" & AP_Youth_Survey$Y_F_176 == "Yes", 1, 0)
+
+#Economic fortunes vs parents
+#Ecuation level: completed for all, current for students
+
+logit.fit <- glm(y ~ age + female + factor(prim_act) + factor(city_size) + rel_others + rel_muslim + rel_christ + caste_others + 
+                   caste_sc + caste_st + caste_bc + ever_married + motorable_road + closed_drainage + rented_house, family=binomial(link = "logit")) 
+summary(logit.fit)
+
+logit.fit$coefficients
+
+x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0,0,1,1,0)  ## OC, Hindu, Employed, Big City, Male, unmarried, motorable road, closed drainage, own house
+
+invlogit(logit.fit$coefficients %*% x)
+
+
+#New outcome variables - 
+#AP_Satisfaction
+#Positive vs. Non Positive
+y_satisfaction <- ifelse(AP_Youth_Survey_Merged$Y_G_187 %in% c("Much Better", "Somewhat Better"), 1, 0)
+
+
+logit.fit <- glm(y_satisfaction ~ age + female + factor(prim_act) + factor(city_size) + rel_others + rel_muslim + rel_christ + caste_others + 
+                   caste_sc + caste_st + caste_bc + ever_married + motorable_road + closed_drainage + rented_house, family=binomial(link = "logit")) 
+summary(logit.fit)
+
+logit.fit$coefficients
+
+x <- c(1,25, 0, 0, 0, 0, 0,0,0,0,0,0,0,0,0,1,1,0)  ## OC, Hindu, Employed, Big City, Male, unmarried, motorable road, closed drainage, own house
+
+invlogit(logit.fit$coefficients %*% x)
 
